@@ -1,0 +1,27 @@
+name: Check PR Comment for Queue Message
+
+on:
+  pull_request:
+    types: [ready_for_review]
+
+jobs:
+  check-comment:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check for required comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { data: comments } = await github.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+
+          const requiredComment = "It's my turn in the queue";
+          const hasComment = comments.some(comment => comment.body.includes(requiredComment));
+
+          if (!hasComment) {
+            throw new Error(`PR cannot be merged until the comment: '${requiredComment}' is present.`);
+          }
+
